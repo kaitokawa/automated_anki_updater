@@ -10,6 +10,66 @@ from aqt.qt import *
 #PyQt4.Qt import Qt
 from PyQt4 import QtGui
 
+class FileWindow(QWidget):
+
+    # main window of plugin
+    def __init__(self):
+        super(FileWindow, self).__init__()
+
+        self.results = None
+        self.thread = None
+
+        self.initGUI()
+
+    # create GUI skeleton
+    def initGUI(self):
+        
+        self.box_top = QVBoxLayout()
+        self.box_upper = QHBoxLayout()
+
+        # left side
+        self.box_left = QVBoxLayout()
+
+        # quizlet url field
+        self.box_name = QHBoxLayout()
+        self.label_file = QLabel("Selected File:")
+        self.label_filename = QLabel("C://test.txt")
+
+        self.box_name.addWidget(self.label_file)
+        self.box_name.addWidget(self.label_filename)
+
+        # add layouts to left
+        self.box_left.addLayout(self.box_name)
+
+        # right side
+        self.box_right = QVBoxLayout()
+
+        # code (import set) button
+        self.box_code = QHBoxLayout()
+        self.button_code = QPushButton("Select File", self)
+        self.box_code.addStretch(1)
+        self.box_code.addWidget(self.button_code)
+        """ self.button_code.clicked.connect(self.onCode) """
+
+        # add layouts to right
+        self.box_right.addLayout(self.box_code)
+
+        # add left and right layouts to upper
+        self.box_upper.addLayout(self.box_left)
+        self.box_upper.addSpacing(20)
+        self.box_upper.addLayout(self.box_right)
+
+        # add all widgets to top layout
+        self.box_top.addLayout(self.box_upper)
+        self.box_top.addStretch(1)
+        self.setLayout(self.box_top)
+
+        # go, baby go!
+        self.setMinimumWidth(500)
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.setWindowTitle("Automated Deck Updater")
+        self.show()
+
 # throw up window for notification
 def message(title, message):
     QMessageBox.information(QWidget(), title, message)
@@ -36,9 +96,11 @@ def testFunction():
     else:
         debug(filename)    
 
+def runPlugIn():
+    global __window
+    __window = FileWindow()
+
 # Create a sub-menu item within menu to select text file
-menu = QMenu("Automatic Text Updater", mw)
-action = QAction("Select a New Text File", menu)
-action.triggered.connect(testFunction)
-mw.form.menuTools.addMenu(menu)
-menu.addAction(action)
+action = QAction("Automatic Text Updater", mw)
+action.triggered.connect(runPlugIn)
+mw.form.menuTools.addAction(action)
