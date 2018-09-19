@@ -10,6 +10,14 @@ from aqt.qt import *
 #PyQt4.Qt import Qt
 from PyQt4 import QtGui
 
+# throw up window for notification
+def message(title, message):
+    QMessageBox.information(QWidget(), title, message)
+
+# throw up a window with some info (used for testing)
+def debug(message):
+    QMessageBox.information(QWidget(), "Message", message)
+
 # Select a file and check to see if it is a plain text file
 def selectNewFile():
     filename = QtGui.QFileDialog.getOpenFileName()
@@ -24,9 +32,9 @@ def selectNewFile():
 def testFunction():
     filename = selectNewFile()
     if filename is None:
-        showInfo("Try again")
+        debug("Try Again")
     else:
-        showInfo(filename)    
+        debug(filename)    
 
 # Create a sub-menu item within menu to select text file
 menu = QMenu("Automatic Text Updater", mw)
