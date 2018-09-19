@@ -3,6 +3,7 @@ import sys
 import mimetypes, os, pickle
 
 #Anki
+from anki.importing import TextImporter
 from aqt import mw
 from aqt.utils import showInfo
 from aqt.qt import *
@@ -58,9 +59,17 @@ class FileWindow(QWidget):
         self.box_remove_code.addWidget(self.remove_button_code)
         self.remove_button_code.clicked.connect(self.onRemoveCode)
 
+        # code (create) button
+        self.box_create_code = QHBoxLayout()
+        self.create_button_code = QPushButton("Create New Deck", self)
+        self.box_create_code.addStretch(1)
+        self.box_create_code.addWidget(self.create_button_code)
+        self.create_button_code.clicked.connect(self.onCreateCode)
+
         # add layouts to right
         self.box_right.addLayout(self.box_select_code)
         self.box_right.addLayout(self.box_remove_code)
+        self.box_right.addLayout(self.box_create_code)
 
         # add left and right layouts to upper
         self.box_upper.addLayout(self.box_left)
@@ -81,6 +90,16 @@ class FileWindow(QWidget):
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.setWindowTitle("Automated Deck Updater")
         self.show()
+
+    def onCreateCode(self):
+        try:
+            file = loadFromPickle()
+            if file == '':
+                message("Message", "There is no file to import from.")
+            else:
+                importFile(file)
+        except EOFError:
+            message("Message", "There is no file to import from.")
 
     def onRemoveCode(self):
         try:
@@ -125,11 +144,15 @@ def debug(message):
     QMessageBox.information(QWidget(), "Debug Message", message)   
 
 def checkOnStartUp():
-    textfile = loadFromPickle()
-    if textfile == '':
+    try:
+        textfile = loadFromPickle()
+        if textfile == '':
+            return "<i>None"
+        else:
+            importFile(textfile)
+            return textfile.rsplit('/', 1)[-1]
+    except EOFError:
         return "<i>None"
-    else:
-        return textfile.rsplit('/', 1)[-1]
 
 def loadFromPickle():
     textfile = ''
@@ -157,6 +180,25 @@ def resetPicklePath():
     resetFile = ''
     with open('file.pickle', 'wb') as output:
         pickle.dump(resetFile, output, -1)
+
+def importFile(filename):
+    name = filename.rsplit('/', 1)[-1].rsplit('.', 1)[0]
+    # select deck
+    did = mw.col.decks.id(name)
+    mw.col.decks.select(did)
+    # anki defaults to the last note type used in the selected deck
+    m = mw.col.models.byName("Basic")
+    deck = mw.col.decks.get(did)
+    deck['mid'] = m['id']
+    mw.col.decks.save(deck)
+    # and puts cards in the last deck used by the note type
+    m['did'] = did
+    # import into the collection
+    ti = TextImporter(mw.col, filename)
+    ti.initMapping()
+    ti.run()
+    mw.col.reset()
+    mw.reset()
 
 def runPlugIn():
     global __window
