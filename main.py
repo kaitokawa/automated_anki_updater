@@ -143,42 +143,55 @@ def message(title, message):
 def debug(message):
     QMessageBox.information(QWidget(), "Debug Message", message)   
 
+def updateAtStartUp():
+    try:
+        textfile = loadFromPickle()
+        if textfile != '':
+            importFile(textfile)
+    except EOFError:
+        pass
+    except IOError:
+        pass
+
 def checkOnStartUp():
     try:
         textfile = loadFromPickle()
         if textfile == '':
             return "<i>None"
         else:
-            importFile(textfile)
             return textfile.rsplit('/', 1)[-1]
     except EOFError:
         return "<i>None"
 
 def loadFromPickle():
+    pickle_path = os.path.dirname(os.path.realpath(__file__)) + '\\file.pickle'
     textfile = ''
     try:
-        with open('file.pickle', 'rb') as input:
+        with open(pickle_path, 'rb') as input:
             textfile = pickle.load(input)
-        return textfile
     except EOFError:
-        return textfile
+        pass
+    except IOError:
+        pass
+    return textfile
 
 def writeToPickle(filepath):
     pickle_path = os.path.dirname(os.path.realpath(__file__)) + '\\file.pickle'
     if os.path.isfile(pickle_path):
-        with open('file.pickle', 'rb') as input:
+        with open(pickle_path, 'rb') as input:
             textfile = pickle.load(input)
         textfile = filepath
-        with open('file.pickle', 'wb') as output:
+        with open(pickle_path, 'wb') as output:
             pickle.dump(textfile, output, -1)
     else:
         textfile = filepath
-        with open('file.pickle', 'wb') as output:
+        with open(pickle_path, 'wb') as output:
             pickle.dump(textfile, output, -1)
 
 def resetPicklePath():
+    pickle_path = os.path.dirname(os.path.realpath(__file__)) + '\\file.pickle'
     resetFile = ''
-    with open('file.pickle', 'wb') as output:
+    with open(pickle_path, 'wb') as output:
         pickle.dump(resetFile, output, -1)
 
 def importFile(filename):
@@ -204,7 +217,8 @@ def runPlugIn():
     global __window
     __window = FileWindow()
 
-# Create a sub-menu item within menu to select text file
+# Create a sub-menu item within menu to open window
 action = QAction("Automatic Text Updater", mw)
 action.triggered.connect(runPlugIn)
 mw.form.menuTools.addAction(action)
+# Updates when Anki starts up
