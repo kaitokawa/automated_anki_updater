@@ -3,6 +3,7 @@ import sys
 import mimetypes, os, pickle
 
 #Anki
+from anki import Collection
 from anki.importing import TextImporter
 from aqt import mw
 from aqt.utils import showInfo
@@ -93,18 +94,18 @@ class FileWindow(QWidget):
 
     def onCreateCode(self):
         try:
-            file = loadFromPickle()
-            if file == '':
+            pickle_list = loadFromPickle()
+            if not pickle_list:
                 message("Message", "There is no file to import from.")
             else:
-                importFile(file)
+                importFile(pickle_list[0])
         except EOFError:
             message("Message", "There is no file to import from.")
 
     def onRemoveCode(self):
         try:
-            file = loadFromPickle()
-            if file != '':
+            pickle_list = loadFromPickle()
+            if pickle_list:
                 self.label_filename.setText("<i>None")
                 resetPicklePath()
                 self.label_message.setText("Successfully removed.")
@@ -145,9 +146,9 @@ def debug(message):
 
 def updateAtStartUp():
     try:
-        textfile = loadFromPickle()
-        if textfile != '':
-            importFile(textfile)
+        pickle_list = loadFromPickle()
+        if pickle_list:
+            importFile(pickle_list[0])
     except EOFError:
         pass
     except IOError:
@@ -155,44 +156,47 @@ def updateAtStartUp():
 
 def checkOnStartUp():
     try:
-        textfile = loadFromPickle()
-        if textfile == '':
+        pickle_list = loadFromPickle()
+        if not pickle_list:
             return "<i>None"
         else:
-            return textfile.rsplit('/', 1)[-1]
+            return pickle_list[0].rsplit('/', 1)[-1]
     except EOFError:
         return "<i>None"
 
 def loadFromPickle():
     pickle_path = os.path.dirname(os.path.realpath(__file__)) + '\\file.pickle'
-    textfile = ''
+    pickle_list = list()
     try:
         with open(pickle_path, 'rb') as input:
-            textfile = pickle.load(input)
+            pickle_list = pickle.load(input)
     except EOFError:
         pass
     except IOError:
         pass
-    return textfile
+    return pickle_list
 
 def writeToPickle(filepath):
+    pickle_list = list()
     pickle_path = os.path.dirname(os.path.realpath(__file__)) + '\\file.pickle'
     if os.path.isfile(pickle_path):
         with open(pickle_path, 'rb') as input:
-            textfile = pickle.load(input)
-        textfile = filepath
+            pickle_list = pickle.load(input)
+        pickle_list.append(filepath)
+        pickle_list.append(mw.pm.name)
         with open(pickle_path, 'wb') as output:
-            pickle.dump(textfile, output, -1)
+            pickle.dump(pickle_list, output, -1)
     else:
-        textfile = filepath
+        pickle_list.append(filepath)
+        pickle_list.append(mw.pm.name)
         with open(pickle_path, 'wb') as output:
-            pickle.dump(textfile, output, -1)
+            pickle.dump(pickle_list, output, -1)
 
 def resetPicklePath():
     pickle_path = os.path.dirname(os.path.realpath(__file__)) + '\\file.pickle'
-    resetFile = ''
+    reset_file = list()
     with open(pickle_path, 'wb') as output:
-        pickle.dump(resetFile, output, -1)
+        pickle.dump(reset_file, output, -1)
 
 def importFile(filename):
     name = filename.rsplit('/', 1)[-1].rsplit('.', 1)[0]
@@ -212,6 +216,9 @@ def importFile(filename):
     ti.run()
     mw.col.reset()
     mw.reset()
+
+def importFileOutsideGUI():
+    col = Collections
 
 def runPlugIn():
     global __window
