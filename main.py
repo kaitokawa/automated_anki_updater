@@ -162,8 +162,11 @@ def debug(message):
 def updateAtStartUp():
     try:
         pickle_list = loadFromPickle()
-        if pickle_list[0] != '':
-            importFileOutsideGUI(pickle_list[0])
+        try:
+            if pickle_list[0] != '':
+                importFileOutsideGUI(pickle_list[0])
+        except IndexError:
+            pass
     except EOFError:
         pass
     except IOError:
