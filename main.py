@@ -32,7 +32,12 @@ class FileWindow(QWidget):
         # left side
         self.box_left = QVBoxLayout()
 
-        # quizlet url field
+        # file display field
+        self.box_instr = QHBoxLayout()
+        self.label_instr = QLabel("Everytime Anki opens, stored file will update.")
+
+        self.box_instr.addWidget(self.label_instr)
+
         self.box_name = QHBoxLayout()
         self.label_file = QLabel("Selected File:")
         self.label_filename = QLabel(checkOnStartUp())
@@ -40,8 +45,13 @@ class FileWindow(QWidget):
         self.box_name.addWidget(self.label_file)
         self.box_name.addWidget(self.label_filename)
 
+        # message label
+        self.label_message = QLabel("\r\n")
+
         # add layouts to left
+        self.box_left.addLayout(self.box_instr)
         self.box_left.addLayout(self.box_name)
+        self.box_left.addWidget(self.label_message)
 
         # right side
         self.box_right = QVBoxLayout()
@@ -77,14 +87,15 @@ class FileWindow(QWidget):
         self.box_upper.addSpacing(20)
         self.box_upper.addLayout(self.box_right)
 
-        # message label
-        self.label_message = QLabel("\r\n")
-
         # add all widgets to top layout
         self.box_top.addLayout(self.box_upper)
-        self.box_top.addWidget(self.label_message)
         self.box_top.addStretch(1)
         self.setLayout(self.box_top)
+
+        # adjust size of buttons
+        self.select_button_code.setMinimumWidth(100)
+        self.remove_button_code.setMinimumWidth(100)
+        self.create_button_code.setMinimumWidth(100)
 
         # go, baby go!
         self.setMinimumWidth(500)
@@ -131,6 +142,7 @@ class FileWindow(QWidget):
             filename = selectNewFile()
             if filename is not None:
                 self.label_filename.setText(filename.rsplit('/', 1)[-1])
+                resetPicklePath()
                 writeToPickle(filename)
                 self.label_message.setText("Successfully Imported!")
 
@@ -147,8 +159,8 @@ def debug(message):
 def updateAtStartUp():
     try:
         pickle_list = loadFromPickle()
-        if pickle_list:
-            importFile(pickle_list[0])
+        if pickle_list[0] != '':
+            importFileOutsideGUI(pickle_list[0])
     except EOFError:
         pass
     except IOError:
@@ -217,15 +229,34 @@ def importFile(filename):
     mw.col.reset()
     mw.reset()
 
-def importFileOutsideGUI():
-    col = Collections
+def importFileOutsideGUI(filename):
+    pickle_list = loadFromPickle()
+    profile_name = pickle_list[1]
+    anki_dir = os.path.dirname(os.path.realpath(__file__).rsplit('\\', 2)[0])
+    anki_collection = anki_dir + '\\' + profile_name + '\collection.anki2'
+    col = Collection(anki_collection)
+    name = filename.rsplit('/', 1)[-1].rsplit('.', 1)[0]
+    did = col.decks.id(name)
+    col.decks.select(did)
+    m = col.models.byName("Basic")
+    deck = col.decks.get(did)
+    deck['mid'] = m['id']
+    col.decks.save(deck)
+    m['did'] = did
+    ti = TextImporter(col, filename)
+    ti.initMapping()
+    ti.run()
+    col.reset()
+    mw.reset()
+    col.close()
 
 def runPlugIn():
     global __window
     __window = FileWindow()
 
+# Updates when Anki starts up
+updateAtStartUp()
 # Create a sub-menu item within menu to open window
 action = QAction("Automatic Text Updater", mw)
 action.triggered.connect(runPlugIn)
 mw.form.menuTools.addAction(action)
-# Updates when Anki starts up
