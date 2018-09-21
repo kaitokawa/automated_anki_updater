@@ -109,10 +109,12 @@ class FileWindow(QWidget):
             pickle_list = loadFromPickle()
             if not pickle_list:
                 message("Message", "There is no file to import from.")
+                self.label_message("Please select another file.")
             else:
                 importFile(pickle_list[0])
         except EOFError:
             message("Message", "There is no file to import from.")
+            self.label_message("Please select another file.")
 
     def onRemoveCode(self):
         try:
@@ -134,11 +136,16 @@ class FileWindow(QWidget):
             filename = QtGui.QFileDialog.getOpenFileName(self, 'File Explorer', home, filter)
             if filename == '':
                 return None
+            if os.stat(filename).st_size == 0:
+                message("Notice", "The selected file has no contents")
+                self.label_message.setText("Please select another file.")
+                return None
             mime = mimetypes.guess_type(filename)
             if mime[0] == 'text/plain':
                 return filename
             else:
                 message("Notice", "Please select a plain text file")
+                self.label_message.setText("Please select another file.")
                 return None
 
         def notifyUser():
