@@ -1,6 +1,7 @@
 import sys
 
 import mimetypes, os, pickle
+from os.path import expanduser
 
 #Anki
 from anki import Collection
@@ -128,7 +129,9 @@ class FileWindow(QWidget):
     def onSelectCode(self):
         # Select a file and check to see if it is a plain text file
         def selectNewFile():
-            filename = QtGui.QFileDialog.getOpenFileName()
+            home = expanduser("~")
+            filter = "Text files (*.txt)"
+            filename = QtGui.QFileDialog.getOpenFileName(self, 'File Explorer', home, filter)
             if filename == '':
                 return None
             mime = mimetypes.guess_type(filename)
